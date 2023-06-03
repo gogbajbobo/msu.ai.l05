@@ -60,12 +60,18 @@ import torch.nn as nn
 
 print(f"PyTorch version: {torch.__version__}")
 
+# Check PyTorch has access to CUDA
+print(f"Is CUDA built? {torch.backends.cuda.is_built()}")
+print(f"Is CUDA available? {torch.cuda.is_available()}")
+
 # Check PyTorch has access to MPS (Metal Performance Shader, Apple's GPU architecture)
 print(f"Is MPS (Metal Performance Shader) built? {torch.backends.mps.is_built()}")
 print(f"Is MPS available? {torch.backends.mps.is_available()}")
 
 # Set the device      
-device = "mps" if torch.backends.mps.is_available() else "cpu"
+device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+
+# device = "cpu"
 print(f"Using device: {device}")
 
 
@@ -98,9 +104,10 @@ from timeit import default_timer
 model = CNN_model().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
+duration_sum = 0
 num_epochs = 10
 loss_hist = [] # for plotting
+
 for epoch in range(num_epochs):
     start = default_timer()
     hist_loss = 0
@@ -121,7 +128,10 @@ for epoch in range(num_epochs):
         hist_loss += loss.item()
     loss_hist.append(hist_loss / len(train_loader))
     duration = default_timer() - start
-    print(f"Epoch={epoch} loss={loss_hist[epoch]:.4f} time:{duration}")
+    duration_sum += duration
+    print(f"Epoch={epoch} loss={loss_hist[epoch]:.4f} time:{duration} s")
+    
+print(f'Mean epoch duration: {duration_sum / num_epochs} s')
 
 # %%
 plt.plot(range(num_epochs), loss_hist)
@@ -194,5 +204,7 @@ for i in range(10):
   plt.title('pred: ' + str(digits[i]) + ' real: '+str(labels[i].cpu().numpy())) # predicted and real values
   plt.axis("off")
   imshow(img.cpu().numpy(),cmap='gray')
+
+# %%
 
 # %%
